@@ -22,6 +22,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: NoteAdapter
 
+    companion object {
+        private const val EXTRA_STATE = "EXTRA_STATE"
+    }
+
     val resultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -29,20 +33,24 @@ class MainActivity : AppCompatActivity() {
             // Akan dipanggil jika request codenya ADD
             when (result.resultCode) {
                 NoteAddUpdateActivity.RESULT_ADD -> {
-                    val note = result.data?.getParcelableExtra<Note>(NoteAddUpdateActivity.EXTRA_NOTE) as Note
+                    val note =
+                        result.data?.getParcelableExtra<Note>(NoteAddUpdateActivity.EXTRA_NOTE) as Note
                     adapter.addItem(note)
                     binding.rvNotes.smoothScrollToPosition(adapter.itemCount - 1)
                     showSnackbarMessage("Satu item berhasil ditambahkan")
                 }
                 NoteAddUpdateActivity.RESULT_UPDATE -> {
-                    val note = result.data?.getParcelableExtra<Note>(NoteAddUpdateActivity.EXTRA_NOTE) as Note
-                    val position = result?.data?.getIntExtra(NoteAddUpdateActivity.EXTRA_POSITION, 0) as Int
+                    val note =
+                        result.data?.getParcelableExtra<Note>(NoteAddUpdateActivity.EXTRA_NOTE) as Note
+                    val position =
+                        result?.data?.getIntExtra(NoteAddUpdateActivity.EXTRA_POSITION, 0) as Int
                     adapter.updateItem(position, note)
                     binding.rvNotes.smoothScrollToPosition(position)
                     showSnackbarMessage("Satu item berhasil diubah")
                 }
                 NoteAddUpdateActivity.RESULT_DELETE -> {
-                    val position = result?.data?.getIntExtra(NoteAddUpdateActivity.EXTRA_POSITION, 0) as Int
+                    val position =
+                        result?.data?.getIntExtra(NoteAddUpdateActivity.EXTRA_POSITION, 0) as Int
                     adapter.removeItem(position)
                     showSnackbarMessage("Satu item berhasil dihapus")
                 }
@@ -74,8 +82,20 @@ class MainActivity : AppCompatActivity() {
             resultLauncher.launch(intent)
         }
 
-        // proses ambil data
-        loadNotesAsync()
+        if (savedInstanceState == null) {
+            // proses ambil data
+            loadNotesAsync()
+        } else {
+            val list = savedInstanceState.getParcelableArrayList<Note>(EXTRA_STATE)
+            if (list != null) {
+                adapter.listNotes = list
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelableArrayList(EXTRA_STATE, adapter.listNotes)
     }
 
     private fun showSnackbarMessage(message: String) {
